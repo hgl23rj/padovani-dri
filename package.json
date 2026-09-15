@@ -1,0 +1,16 @@
+{
+  "name": "padovani-dri-api",
+  "version": "1.1.0",
+  "description": "API protegida - Calculadora DRI Padovani (tabelas no servidor)",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node index.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "express": "^4.21.0",
+    "jsonwebtoken": "^9.0.2"
+  }
+}
