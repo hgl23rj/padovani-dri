@@ -1,111 +1,170 @@
-<!doctype html>
+from pathlib import Path
+import zipfile, textwrap, json
+
+out = Path("/mnt/data/padovani-dri-v2")
+(out / "server").mkdir(parents=True, exist_ok=True)
+
+index_html = r'''<!doctype html>
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#0b7285">
-<title>Padovani DRI · Calculadora protegida</title>
+<title>Padovani DRI V2 · Demo + Profissional</title>
 <style>
-:root{--bg:#07151a;--panel:#10262d;--panel2:#0d2026;--text:#e9f5f7;--muted:#9fb8be;--primary:#18a999;--primary2:#0b7285;--danger:#ef6b73;--line:#23434c;--white:#fff}
+:root{--bg:#07151a;--panel:#10262d;--panel2:#0d2026;--text:#e9f5f7;--muted:#9fb8be;--primary:#18a999;--primary2:#0b7285;--danger:#ef6b73;--line:#23434c;--gold:#e6b85c}
 *{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:linear-gradient(135deg,#061116,#0b2027 55%,#07333a);color:var(--text);min-height:100vh}
-button,input,select{font:inherit}.hidden{display:none!important}.wrap{max-width:1120px;margin:auto;padding:24px}.top{display:flex;justify-content:space-between;gap:16px;align-items:center;margin-bottom:20px}.brand h1{font-size:clamp(1.35rem,3vw,2rem);margin:0}.brand p{margin:6px 0 0;color:var(--muted)}
+button,input,select{font:inherit}.hidden{display:none!important}.wrap{max-width:1120px;margin:auto;padding:24px}
+.top{display:flex;justify-content:space-between;gap:16px;align-items:center;margin-bottom:20px}.brand h1{font-size:clamp(1.35rem,3vw,2rem);margin:0}.brand p{margin:6px 0 0;color:var(--muted)}
 .card{background:rgba(16,38,45,.96);border:1px solid var(--line);border-radius:18px;padding:22px;box-shadow:0 16px 50px rgba(0,0,0,.25)}
-.login{max-width:460px;margin:7vh auto}.logo{width:68px;height:68px;border-radius:18px;display:grid;place-items:center;background:linear-gradient(135deg,var(--primary),var(--primary2));font-size:34px;margin-bottom:15px}.login h2{margin:0 0 8px}.muted{color:var(--muted)}.field{margin:14px 0}.field label{display:block;font-weight:700;margin-bottom:7px}.field input,.field select{width:100%;padding:12px 13px;border-radius:11px;border:1px solid var(--line);background:#081a20;color:var(--text);outline:none}.field input:focus,.field select:focus{border-color:var(--primary)}
-.btn{border:0;border-radius:11px;padding:12px 16px;cursor:pointer;font-weight:800}.btn.primary{background:var(--primary);color:#06231f}.btn.secondary{background:#173840;color:var(--text);border:1px solid var(--line)}.btn.danger{background:#4a2025;color:#ffd9dc}.btn:disabled{opacity:.5;cursor:not-allowed}.row{display:flex;gap:12px;flex-wrap:wrap}.row>*{flex:1;min-width:180px}.userbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.pill{padding:7px 10px;border:1px solid var(--line);border-radius:999px;color:#bcece6;background:#0b272d;font-size:.9rem}
-.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}.grid .wide{grid-column:span 2}.actions{margin-top:18px;display:flex;gap:10px;flex-wrap:wrap}.status{margin:14px 0;padding:11px 13px;border-radius:10px;background:#0a2026;border:1px solid var(--line);color:#b7d2d7}.status.error{border-color:#71333a;color:#ffd4d7;background:#29151a}.status.ok{border-color:#24685f;color:#bdf0e7}
-.tabs{display:flex;gap:8px;margin:20px 0 10px}.tab.active{background:var(--primary);color:#06231f}.table-wrap{overflow:auto;border:1px solid var(--line);border-radius:13px}table{width:100%;border-collapse:collapse;min-width:720px}th,td{padding:11px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}th{background:#0a1d23;position:sticky;top:0}tr:last-child td{border-bottom:0}.note{font-size:.83rem;color:var(--muted);max-width:360px}.empty{padding:30px;text-align:center;color:var(--muted)}footer{text-align:center;color:var(--muted);padding:30px 10px}
-@media(max-width:800px){.grid{grid-template-columns:1fr 1fr}.grid .wide{grid-column:span 2}}@media(max-width:560px){.wrap{padding:14px}.grid{grid-template-columns:1fr}.grid .wide{grid-column:span 1}.top{align-items:flex-start;flex-direction:column}.card{padding:16px}}
-@media print{body{background:#fff;color:#111}.no-print,.login,.userbar,.actions,.tabs{display:none!important}.wrap{max-width:none;padding:0}.card{box-shadow:none;border:0;background:#fff;padding:0}.table-wrap{border:1px solid #aaa}th{background:#eee;color:#111}td,th{border-color:#ccc}footer{color:#444}}
+.login{max-width:520px;margin:7vh auto}.logo{width:68px;height:68px;border-radius:18px;display:grid;place-items:center;background:linear-gradient(135deg,var(--primary),var(--primary2));font-size:27px;font-weight:900;margin-bottom:15px}
+.login h2{margin:0 0 8px}.muted{color:var(--muted)}.field{margin:14px 0}.field label{display:block;font-weight:700;margin-bottom:7px}.field input,.field select{width:100%;padding:12px 13px;border-radius:11px;border:1px solid var(--line);background:#081a20;color:var(--text);outline:none}.field input:focus,.field select:focus{border-color:var(--primary)}
+.btn{border:0;border-radius:11px;padding:12px 16px;cursor:pointer;font-weight:800}.btn.primary{background:var(--primary);color:#06231f}.btn.secondary{background:#173840;color:var(--text);border:1px solid var(--line)}.btn.danger{background:#4a2025;color:#ffd9dc}.btn.gold{background:#6a5422;color:#fff2c7}.btn:disabled{opacity:.5;cursor:not-allowed}
+.row{display:flex;gap:12px;flex-wrap:wrap}.row>*{flex:1;min-width:180px}.userbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.pill{padding:7px 10px;border:1px solid var(--line);border-radius:999px;color:#bcece6;background:#0b272d;font-size:.9rem}.pill.demo{color:#ffe8a6;border-color:#806526;background:#3a3018}.pill.pro{color:#bdf0e7}
+.modebox{margin:15px 0;padding:14px;border-radius:13px;border:1px solid var(--line);background:#0a2026}.modebox.demo{border-color:#806526;background:linear-gradient(135deg,#302815,#172328)}.modebox.pro{border-color:#24685f}
+.mode-title{font-weight:900;font-size:1.05rem}.mode-copy{margin-top:5px;color:var(--muted);font-size:.9rem;line-height:1.45}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}.grid .wide{grid-column:span 2}.actions{margin-top:18px;display:flex;gap:10px;flex-wrap:wrap}
+.status{margin:14px 0;padding:11px 13px;border-radius:10px;background:#0a2026;border:1px solid var(--line);color:#b7d2d7}.status.error{border-color:#71333a;color:#ffd4d7;background:#29151a}.status.ok{border-color:#24685f;color:#bdf0e7}
+.tabs{display:flex;gap:8px;margin:20px 0 10px}.tab.active{background:var(--primary);color:#06231f}.table-wrap{overflow:auto;border:1px solid var(--line);border-radius:13px}table{width:100%;border-collapse:collapse;min-width:720px}th,td{padding:11px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}th{background:#0a1d23;position:sticky;top:0}tr:last-child td{border-bottom:0}.note{font-size:.83rem;color:var(--muted);max-width:360px}.empty{padding:30px;text-align:center;color:var(--muted)}
+.feature-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:16px}.feature{padding:13px;border:1px solid var(--line);border-radius:12px;background:#0a2026}.feature b{display:block;margin-bottom:4px}
+footer{text-align:center;color:var(--muted);padding:30px 10px}
+@media(max-width:800px){.grid{grid-template-columns:1fr 1fr}}@media(max-width:560px){.wrap{padding:14px}.grid{grid-template-columns:1fr}.grid .wide{grid-column:span 1}.top{align-items:flex-start;flex-direction:column}.card{padding:16px}.feature-grid{grid-template-columns:1fr}}
+@media print{body{background:#fff;color:#111}.no-print,.login,.userbar,.actions,.tabs,.modebox{display:none!important}.wrap{max-width:none;padding:0}.card{box-shadow:none;border:0;background:#fff;padding:0}.table-wrap{border:1px solid #aaa}th{background:#eee;color:#111}td,th{border-color:#ccc}footer{color:#444}}
 </style>
 </head>
 <body>
+
 <div id="loginView" class="wrap">
-  <section class="card login">
-    <div class="logo">DRI</div>
-    <h2>Padovani DRI</h2>
-    <p class="muted">Calculadora de micronutrientes com as tabelas mantidas no servidor.</p>
-    <form id="loginForm">
-      <div class="field"><label for="email">E-mail</label><input id="email" type="email" autocomplete="username" required value="nutri@demo.com"></div>
-      <div class="field"><label for="password">Senha</label><input id="password" type="password" autocomplete="current-password" required value="demo123"></div>
-      <button class="btn primary" style="width:100%" type="submit">Entrar</button>
-    </form>
-    <div id="loginMsg" class="status hidden"></div>
-    <p class="muted" style="font-size:.85rem;margin-bottom:0">Teste inicial: <b>nutri@demo.com</b> / <b>demo123</b></p>
-  </section>
+<section class="card login">
+  <div class="logo">DRI</div>
+  <h2>Padovani DRI V2</h2>
+  <p class="muted">Calculadora DRI protegida no servidor, agora com <b>Modo DEMO</b> e <b>Modo PROFISSIONAL</b>.</p>
+
+  <div class="modebox demo">
+    <div class="mode-title">🧪 DEMO</div>
+    <div class="mode-copy">Acesso limitado para demonstração: poucos estágios, conjunto reduzido de nutrientes e limite diário de cálculos.</div>
+  </div>
+
+  <div class="modebox pro">
+    <div class="mode-title">👨‍⚕️ PROFISSIONAL</div>
+    <div class="mode-copy">Acesso completo às faixas, gestação/lactação, vitaminas, minerais e cálculos DRI disponíveis no servidor.</div>
+  </div>
+
+  <form id="loginForm">
+    <div class="field"><label for="email">E-mail</label><input id="email" type="email" autocomplete="username" required value="nutri@demo.com"></div>
+    <div class="field"><label for="password">Senha</label><input id="password" type="password" autocomplete="current-password" required value="demo123"></div>
+    <button class="btn primary" style="width:100%" type="submit">Entrar</button>
+  </form>
+
+  <div class="row" style="margin-top:12px">
+    <button id="demoFill" class="btn gold" type="button">Usar conta DEMO</button>
+    <button id="proFill" class="btn secondary" type="button">Usar conta PROFISSIONAL</button>
+  </div>
+
+  <div id="loginMsg" class="status hidden"></div>
+  <p class="muted" style="font-size:.82rem;margin-bottom:0">
+    DEMO: <b>teste@demo.com</b> / <b>demo123</b> · PROFISSIONAL: <b>nutri@demo.com</b> / <b>demo123</b>
+  </p>
+</section>
 </div>
 
 <div id="appView" class="wrap hidden">
-  <header class="top">
-    <div class="brand"><h1>Padovani DRI · Calculadora</h1><p>Consulta protegida — os dados completos permanecem no servidor.</p></div>
-    <div class="userbar"><span id="userPill" class="pill">Não autenticado</span><button id="logoutBtn" class="btn danger no-print">Sair</button></div>
-  </header>
+<header class="top">
+  <div class="brand">
+    <h1>Padovani DRI · Calculadora V2</h1>
+    <p>As tabelas DRI permanecem no servidor.</p>
+  </div>
+  <div class="userbar">
+    <span id="planPill" class="pill">Plano</span>
+    <span id="userPill" class="pill">Não autenticado</span>
+    <button id="logoutBtn" class="btn danger no-print">Sair</button>
+  </div>
+</header>
 
-  <main>
-    <section class="card">
-      <h2 style="margin-top:0">Consulta DRI</h2>
-      <div class="grid">
-        <div class="field"><label for="sexo">Sexo</label><select id="sexo"><option value="F">Feminino</option><option value="M">Masculino</option></select></div>
-        <div class="field"><label for="condicao">Condição fisiológica</label><select id="condicao"><option value="normal">Normal</option><option value="gestante">Gestante</option><option value="lactante">Lactante</option></select></div>
-        <div class="field wide"><label for="stage">Faixa / estágio</label><select id="stage"></select></div>
-        <div class="field wide"><label for="paciente">Nome do paciente (opcional)</label><input id="paciente" maxlength="120" placeholder="Nome para o relatório"></div>
-      </div>
-      <div class="actions no-print">
-        <button id="calcBtn" class="btn primary">Calcular metas diárias</button>
-        <button id="printBtn" class="btn secondary">Imprimir / salvar PDF</button>
-      </div>
-      <div id="appMsg" class="status hidden"></div>
-    </section>
+<main>
+<section id="modeBanner" class="modebox no-print"></section>
 
-    <section id="resultCard" class="card hidden" style="margin-top:18px">
-      <div style="display:flex;justify-content:space-between;gap:15px;align-items:flex-start;flex-wrap:wrap">
-        <div><h2 style="margin:0">Metas diárias</h2><p id="resultMeta" class="muted"></p></div>
-        <div id="license" class="pill"></div>
-      </div>
-      <div class="tabs no-print">
-        <button class="btn secondary tab active" data-group="todos">Todos</button>
-        <button class="btn secondary tab" data-group="vitaminas">Vitaminas</button>
-        <button class="btn secondary tab" data-group="minerais">Minerais</button>
-      </div>
-      <div id="tableArea" class="table-wrap"></div>
-    </section>
-  </main>
-  <footer>Padovani DRI · Consulta calculada no servidor. © 2026</footer>
+<section class="card">
+  <h2 style="margin-top:0">Consulta DRI</h2>
+  <div class="grid">
+    <div class="field"><label for="sexo">Sexo</label><select id="sexo"><option value="F">Feminino</option><option value="M">Masculino</option></select></div>
+    <div class="field"><label for="condicao">Condição fisiológica</label><select id="condicao"><option value="normal">Normal</option><option value="gestante">Gestante</option><option value="lactante">Lactante</option></select></div>
+    <div class="field wide"><label for="stage">Faixa / estágio</label><select id="stage"></select></div>
+    <div class="field wide"><label for="paciente">Nome do paciente (opcional)</label><input id="paciente" maxlength="120" placeholder="Nome para o relatório"></div>
+  </div>
+  <div class="actions no-print">
+    <button id="calcBtn" class="btn primary">Calcular metas diárias</button>
+    <button id="printBtn" class="btn secondary">Imprimir / salvar PDF</button>
+  </div>
+  <div id="appMsg" class="status hidden"></div>
+</section>
+
+<section id="resultCard" class="card hidden" style="margin-top:18px">
+  <div style="display:flex;justify-content:space-between;gap:15px;align-items:flex-start;flex-wrap:wrap">
+    <div><h2 style="margin:0">Metas diárias</h2><p id="resultMeta" class="muted"></p></div>
+    <div id="license" class="pill"></div>
+  </div>
+  <div class="tabs no-print">
+    <button class="btn secondary tab active" data-group="todos">Todos</button>
+    <button class="btn secondary tab" data-group="vitaminas">Vitaminas</button>
+    <button class="btn secondary tab" data-group="minerais">Minerais</button>
+  </div>
+  <div id="tableArea" class="table-wrap"></div>
+</section>
+</main>
+
+<footer>Padovani DRI V2 · DEMO + PROFISSIONAL · © 2026</footer>
 </div>
+
 <script>
 'use strict';
 const API='';
 let token=sessionStorage.getItem('padovani_token')||'';
-let user=null;
-let lastResult=null;
-let currentGroup='todos';
+let user=null,lastResult=null,currentGroup='todos';
 const $=id=>document.getElementById(id);
 function show(el,on=true){el.classList.toggle('hidden',!on)}
 function message(el,text,type=''){el.textContent=text;el.className='status'+(type?' '+type:'');show(el,true)}
 function clearMessage(el){show(el,false)}
 function esc(v){return String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
-function authHeaders(){return {'Content-Type':'application/json','Authorization':'Bearer '+token}}
 async function api(path,opts={}){
   const headers=Object.assign({},opts.body?{'Content-Type':'application/json'}:{},opts.headers||{},token?{'Authorization':'Bearer '+token}:{});
   const r=await fetch(API+path,Object.assign({},opts,{headers}));
-  let data={}; try{data=await r.json()}catch{}
-  if(r.status===401){sessionStorage.removeItem('padovani_token');token='';show($('appView'),false);show($('loginView'),true);message($('loginMsg'),data.erro||'Sessão expirada. Faça login novamente.','error');throw new Error(data.erro||'Não autenticado')}
+  let data={};try{data=await r.json()}catch{}
+  if(r.status===401){
+    sessionStorage.removeItem('padovani_token');token='';user=null;
+    show($('appView'),false);show($('loginView'),true);
+    message($('loginMsg'),data.erro||'Sessão expirada. Faça login novamente.','error');
+    throw new Error(data.erro||'Não autenticado');
+  }
   if(!r.ok)throw new Error(data.erro||'Erro HTTP '+r.status);
   return data;
 }
+function fillLogin(email,password){$('email').value=email;$('password').value=password}
 async function login(ev){
   ev.preventDefault();clearMessage($('loginMsg'));
   try{
-    const email=$('email').value.trim(),password=$('password').value;
-    const data=await api('/api/login',{method:'POST',body:JSON.stringify({email,password})});
+    const data=await api('/api/login',{method:'POST',body:JSON.stringify({email:$('email').value.trim(),password:$('password').value})});
     token=data.token;user=data.usuario;sessionStorage.setItem('padovani_token',token);await enterApp();
   }catch(e){message($('loginMsg'),e.message,'error')}
 }
 async function enterApp(){
   try{
     const data=await api('/api/me');user=data.usuario;
-    $('userPill').textContent=(user.nome||user.email)+(user.crn?' · '+user.crn:'')+' · '+(user.plano||'');
-    show($('loginView'),false);show($('appView'),true);await loadStages();
-  }catch(e){token='';sessionStorage.removeItem('padovani_token');show($('appView'),false);show($('loginView'),true)}
+    const isPro=user.plano==='pro'||user.plano==='profissional';
+    $('userPill').textContent=(user.nome||user.email)+(user.crn?' · '+user.crn:'');
+    $('planPill').textContent=isPro?'👨‍⚕️ PROFISSIONAL':'🧪 DEMO';
+    $('planPill').className='pill '+(isPro?'pro':'demo');
+    $('modeBanner').className='modebox '+(isPro?'pro':'demo')+' no-print';
+    $('modeBanner').innerHTML=isPro
+      ? '<div class="mode-title">👨‍⚕️ MODO PROFISSIONAL — acesso completo</div><div class="mode-copy">Todos os estágios permitidos pelo banco DRI do servidor, incluindo normal, gestante e lactante, com consulta completa de vitaminas e minerais.</div>'
+      : '<div class="mode-title">🧪 MODO DEMO — acesso limitado</div><div class="mode-copy">Apenas 3 faixas adultas de demonstração, 10 nutrientes selecionados e até 5 cálculos por período de 24 horas. O bloqueio é feito no servidor.</div>';
+    show($('loginView'),false);show($('appView'),true);
+    $('condicao').disabled=!isPro;
+    if(!isPro)$('condicao').value='normal';
+    await loadStages();
+  }catch(e){
+    token='';sessionStorage.removeItem('padovani_token');show($('appView'),false);show($('loginView'),true);
+  }
 }
 async function loadStages(){
   const sexo=$('sexo').value,condicao=$('condicao').value;
@@ -114,14 +173,16 @@ async function loadStages(){
     const sel=$('stage');sel.innerHTML='';
     (data.estagios||[]).forEach(s=>{const o=document.createElement('option');o.value=s.id;o.textContent=s.label;sel.appendChild(o)});
     if(!sel.options.length)sel.innerHTML='<option value="">Nenhum estágio disponível</option>';
+    clearMessage($('appMsg'));
   }catch(e){message($('appMsg'),e.message,'error')}
 }
 async function calculate(){
-  clearMessage($('appMsg'));const stageId=$('stage').value;if(!stageId){message($('appMsg'),'Selecione um estágio.','error');return}
+  clearMessage($('appMsg'));const stageId=$('stage').value;
+  if(!stageId){message($('appMsg'),'Selecione um estágio.','error');return}
   $('calcBtn').disabled=true;$('calcBtn').textContent='Calculando no servidor…';
   try{
     const data=await api('/api/calcular',{method:'POST',body:JSON.stringify({stageId,grupo:currentGroup,pacienteNome:$('paciente').value.trim()})});
-    lastResult=data;renderResult(data);message($('appMsg'),'Cálculo realizado com sucesso.','ok');
+    lastResult=data;renderResult(data);message($('appMsg'),data.modo==='demo'?'Demonstração calculada.':'Cálculo profissional realizado com sucesso.','ok');
   }catch(e){message($('appMsg'),e.message,'error')}
   finally{$('calcBtn').disabled=false;$('calcBtn').textContent='Calcular metas diárias'}
 }
@@ -135,14 +196,468 @@ function renderResult(data){
 function renderTable(metas){
   if(!metas.length){$('tableArea').innerHTML='<div class="empty">Nenhum dado para esta consulta.</div>';return}
   let html='<table><thead><tr><th>Nutriente</th><th>Grupo</th><th>Unidade</th><th>EAR</th><th>RDA / AI</th><th>UL</th><th>Observação</th></tr></thead><tbody>';
-  for(const n of metas){html+='<tr><td><b>'+esc(n.nome)+'</b><div style="font-size:.75rem;color:#75939a">'+esc(n.id)+'</div></td><td>'+esc(n.grupo)+'</td><td>'+esc(n.unidade)+'</td><td>'+fmt(n.ear)+'</td><td>'+fmt(n.rda)+(n.isAI?' <span class="pill" style="font-size:.72rem;padding:3px 7px">AI</span>':'')+'</td><td>'+fmt(n.ul)+(n.ulUnit&&n.ulUnit!==n.unidade?' '+esc(n.ulUnit):'')+'</td><td class="note">'+esc(n.nota||'')+'</td></tr>'}
-  html+='</tbody></table>';$('tableArea').innerHTML=html;
+  for(const n of metas){
+    html+='<tr><td><b>'+esc(n.nome)+'</b><div style="font-size:.75rem;color:#75939a">'+esc(n.id)+'</div></td><td>'+esc(n.grupo)+'</td><td>'+esc(n.unidade)+'</td><td>'+fmt(n.ear)+'</td><td>'+fmt(n.rda)+(n.isAI?' <span class="pill" style="font-size:.72rem;padding:3px 7px">AI</span>':'')+'</td><td>'+fmt(n.ul)+(n.ulUnit&&n.ulUnit!==n.unidade?' '+esc(n.ulUnit):'')+'</td><td class="note">'+esc(n.nota||'')+'</td></tr>';
+  }
+  html+='</tbody></table>'; $('tableArea').innerHTML=html;
 }
-function switchGroup(group){currentGroup=group;document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.group===group));if(lastResult)calculate()}
+function switchGroup(group){
+  currentGroup=group;
+  document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.group===group));
+  if(!lastResult)return;
+  // No modo demo, o servidor continua sendo a autoridade do limite.
+  calculate();
+}
 $('loginForm').addEventListener('submit',login);
-$('logoutBtn').addEventListener('click',()=>{token='';user=null;lastResult=null;sessionStorage.removeItem('padovani_token');show($('appView'),false);show($('loginView'),true);$('password').value='';clearMessage($('loginMsg'))});
-$('sexo').addEventListener('change',loadStages);$('condicao').addEventListener('change',loadStages);$('calcBtn').addEventListener('click',calculate);$('printBtn').addEventListener('click',()=>window.print());document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>switchGroup(b.dataset.group)));
-(async()=>{if(token){await enterApp()}else{show($('loginView'),true);show($('appView'),false)}})();
+$('demoFill').addEventListener('click',()=>fillLogin('teste@demo.com','demo123'));
+$('proFill').addEventListener('click',()=>fillLogin('nutri@demo.com','demo123'));
+$('logoutBtn').addEventListener('click',()=>{token='';user=null;lastResult=null;sessionStorage.removeItem('padovani_token');show($('appView'),false);show($('loginView'),true);$('password').value='';clearMessage($('loginMsg'));});
+$('sexo').addEventListener('change',loadStages);
+$('condicao').addEventListener('change',loadStages);
+$('calcBtn').addEventListener('click',calculate);
+$('printBtn').addEventListener('click',()=>window.print());
+document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>switchGroup(b.dataset.group)));
+(async()=>{if(token)await enterApp();else{show($('loginView'),true);show($('appView'),false)}})();
 </script>
 </body>
-</html>
+</html>'''
+
+server_js = r'''/**
+ * Padovani DRI API V2 — DEMO + PROFISSIONAL
+ * As tabelas completas permanecem em server/data/dri.js.
+ * As limitações do modo DEMO são aplicadas NO SERVIDOR.
+ */
+const express = require('express');
+const cors = require('cors');
+const path = require('path');
+const fs = require('fs');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const { calcularMetas, listarEstagios } = require('./data/dri');
+
+const app = express();
+app.set('trust proxy', 1);
+
+const PORT = process.env.PORT || 3847;
+const JWT_SECRET = process.env.JWT_SECRET || 'mude-este-segredo-em-producao-padovani-2026';
+const TOKEN_EXPIRA = '12h';
+
+const DEMO_MAX_CALCULOS = 5;
+const DEMO_WINDOW_MS = 24 * 60 * 60 * 1000;
+const DEMO_MAX_NUTRIENTES = 10;
+
+/*
+ * Contas de teste.
+ * PROFISSIONAL = acesso completo.
+ * DEMO = acesso limitado.
+ *
+ * Para produção real, substitua este array por usuários em banco de dados.
+ */
+const users = [
+  {
+    id: 1,
+    email: 'nutri@demo.com',
+    nome: 'Nutricionista Demo',
+    crn: 'CRN-4 00000',
+    passwordHash: bcrypt.hashSync('demo123', 10),
+    plano: 'pro',
+    ativo: true
+  },
+  {
+    id: 2,
+    email: 'teste@demo.com',
+    nome: 'Usuário Demo',
+    crn: null,
+    passwordHash: bcrypt.hashSync('demo123', 10),
+    plano: 'demo',
+    ativo: true
+  }
+];
+
+// Rate limit geral por IP.
+const hits = new Map();
+function rateLimit(req, res, next) {
+  const ip = req.ip || req.connection.remoteAddress || 'unknown';
+  const now = Date.now();
+  const windowMs = 60_000;
+  const max = 60;
+  let entry = hits.get(ip);
+  if (!entry || now - entry.start > windowMs) {
+    entry = { start: now, count: 0 };
+    hits.set(ip, entry);
+  }
+  entry.count += 1;
+  if (entry.count > max) {
+    return res.status(429).json({ erro: 'Muitas requisições. Aguarde um minuto.' });
+  }
+  next();
+}
+
+app.use(cors({ origin: true, credentials: true }));
+app.use(express.json({ limit: '32kb' }));
+app.use(rateLimit);
+
+// Frontend: raiz do repositório ou public/.
+const publicCandidates = [
+  path.join(__dirname, 'public'),
+  path.join(__dirname, '../public'),
+  path.join(__dirname, '..')
+];
+const publicDir = publicCandidates.find(d => fs.existsSync(path.join(d, 'index.html')));
+if (publicDir) {
+  app.use(express.static(publicDir));
+  console.log('Servindo front de:', publicDir);
+} else {
+  console.warn('AVISO: index.html do front não encontrado.');
+}
+
+function isProfessional(user) {
+  return user && (user.plano === 'pro' || user.plano === 'profissional');
+}
+
+function authRequired(req, res, next) {
+  const header = req.headers.authorization || '';
+  const token = header.startsWith('Bearer ') ? header.slice(7) : null;
+  if (!token) return res.status(401).json({ erro: 'Login necessário.' });
+
+  try {
+    const payload = jwt.verify(token, JWT_SECRET);
+    const user = users.find(u => u.id === payload.sub && u.ativo);
+    if (!user) return res.status(401).json({ erro: 'Sessão inválida.' });
+
+    req.user = {
+      id: user.id,
+      email: user.email,
+      nome: user.nome,
+      crn: user.crn,
+      plano: user.plano
+    };
+    next();
+  } catch {
+    return res.status(401).json({ erro: 'Token expirado ou inválido. Faça login novamente.' });
+  }
+}
+
+// Limite DEMO persistido apenas enquanto esta instância do servidor estiver ativa.
+// Para produção com cobrança/assinatura, use banco/Redis.
+const demoUsage = new Map();
+
+function demoKey(req) {
+  return String(req.user.id) + ':' + (req.ip || 'unknown');
+}
+
+function getDemoUsage(req) {
+  const key = demoKey(req);
+  const now = Date.now();
+  let entry = demoUsage.get(key);
+
+  if (!entry || now - entry.startedAt >= DEMO_WINDOW_MS) {
+    entry = { startedAt: now, count: 0 };
+    demoUsage.set(key, entry);
+  }
+  return entry;
+}
+
+function consumeDemoCalculation(req) {
+  const entry = getDemoUsage(req);
+  if (entry.count >= DEMO_MAX_CALCULOS) return false;
+  entry.count += 1;
+  return true;
+}
+
+/*
+ * O modo DEMO mostra somente três faixas adultas normais.
+ * O filtro é feito a partir dos estágios reais do banco, sem expor
+ * ao navegador os demais estágios.
+ */
+function listarEstagiosDemo(sexo) {
+  const todos = listarEstagios(sexo, 'normal') || [];
+  const wanted = [
+    /19\s*[–-]\s*30/i,
+    /31\s*[–-]\s*50/i,
+    /51\s*[–-]\s*70/i
+  ];
+
+  const escolhidos = [];
+  for (const rx of wanted) {
+    const found = todos.find(s => rx.test(String(s.label || '')));
+    if (found && !escolhidos.some(x => x.id === found.id)) escolhidos.push(found);
+  }
+
+  // Fallback seguro caso a grafia dos rótulos mude no arquivo DRI.
+  if (escolhidos.length < 3) {
+    for (const s of todos) {
+      if (!escolhidos.some(x => x.id === s.id)) escolhidos.push(s);
+      if (escolhidos.length === 3) break;
+    }
+  }
+
+  return escolhidos.slice(0, 3);
+}
+
+/*
+ * Nutrientes selecionados para a demonstração.
+ * O filtro usa o nome do nutriente e, se a nomenclatura mudar,
+ * cai para os primeiros itens disponíveis — nunca libera a tabela completa.
+ */
+const DEMO_NUTRIENT_PATTERNS = [
+  /cálcio|calcio/i,
+  /ferro/i,
+  /zinco/i,
+  /magnésio|magnesio/i,
+  /potássio|potassio/i,
+  /vitamina\s*d/i,
+  /vitamina\s*c/i,
+  /vitamina\s*a/i,
+  /folato|ácido fólico|acido folico/i,
+  /vitamina\s*b12|cobalamina/i
+];
+
+function limitarMetasDemo(metas) {
+  const selected = [];
+
+  for (const rx of DEMO_NUTRIENT_PATTERNS) {
+    const found = metas.find(n =>
+      rx.test(String(n.nome || '')) &&
+      !selected.some(x => x.id === n.id)
+    );
+    if (found) selected.push(found);
+  }
+
+  for (const n of metas) {
+    if (selected.length >= DEMO_MAX_NUTRIENTES) break;
+    if (!selected.some(x => x.id === n.id)) selected.push(n);
+  }
+
+  return selected.slice(0, DEMO_MAX_NUTRIENTES);
+}
+
+app.get('/api/health', (_req, res) => {
+  res.json({
+    ok: true,
+    servico: 'Padovani DRI API',
+    versao: '2.0.0',
+    modos: ['demo', 'pro']
+  });
+});
+
+app.post('/api/login', (req, res) => {
+  const { email, password } = req.body || {};
+  if (!email || !password) {
+    return res.status(400).json({ erro: 'E-mail e senha obrigatórios.' });
+  }
+
+  const user = users.find(
+    u => u.email.toLowerCase() === String(email).trim().toLowerCase()
+  );
+
+  if (!user || !bcrypt.compareSync(password, user.passwordHash)) {
+    return res.status(401).json({ erro: 'E-mail ou senha incorretos.' });
+  }
+
+  if (!user.ativo) return res.status(403).json({ erro: 'Conta desativada.' });
+
+  const token = jwt.sign(
+    { sub: user.id, email: user.email, plano: user.plano },
+    JWT_SECRET,
+    { expiresIn: TOKEN_EXPIRA }
+  );
+
+  res.json({
+    token,
+    usuario: {
+      id: user.id,
+      email: user.email,
+      nome: user.nome,
+      crn: user.crn,
+      plano: user.plano
+    },
+    expiraEm: TOKEN_EXPIRA
+  });
+});
+
+app.get('/api/me', authRequired, (req, res) => {
+  const isPro = isProfessional(req.user);
+  const usage = isPro ? null : getDemoUsage(req);
+
+  res.json({
+    usuario: req.user,
+    modo: isPro ? 'profissional' : 'demo',
+    limites: isPro
+      ? { calculos: null, nutrientesPorConsulta: null, estagios: 'completo' }
+      : {
+          calculosRestantes: Math.max(0, DEMO_MAX_CALCULOS - (usage ? usage.count : 0)),
+          calculosMaximos: DEMO_MAX_CALCULOS,
+          nutrientesPorConsulta: DEMO_MAX_NUTRIENTES,
+          estagios: 3,
+          condicoes: ['normal']
+        }
+  });
+});
+
+app.get('/api/estagios', authRequired, (req, res) => {
+  const sexo = String(req.query.sexo || 'F').toUpperCase();
+  const condicao = String(req.query.condicao || 'normal').toLowerCase();
+
+  if (!['M', 'F'].includes(sexo)) {
+    return res.status(400).json({ erro: 'sexo deve ser M ou F' });
+  }
+  if (!['normal', 'gestante', 'lactante'].includes(condicao)) {
+    return res.status(400).json({ erro: 'condição inválida' });
+  }
+
+  if (!isProfessional(req.user)) {
+    if (condicao !== 'normal') {
+      return res.status(403).json({
+        erro: 'O modo DEMO permite somente a condição Normal. Acesso a gestante e lactante é profissional.'
+      });
+    }
+
+    return res.json({
+      modo: 'demo',
+      estagios: listarEstagiosDemo(sexo),
+      limite: {
+        estagios: 3,
+        observacao: 'Estágios limitados para demonstração.'
+      }
+    });
+  }
+
+  return res.json({
+    modo: 'profissional',
+    estagios: listarEstagios(sexo, condicao)
+  });
+});
+
+app.post('/api/calcular', authRequired, (req, res) => {
+  const { stageId, grupo = 'todos', pacienteNome = '' } = req.body || {};
+
+  if (!stageId || typeof stageId !== 'string') {
+    return res.status(400).json({ erro: 'stageId obrigatório.' });
+  }
+  if (!['todos', 'vitaminas', 'minerais'].includes(grupo)) {
+    return res.status(400).json({ erro: 'grupo inválido.' });
+  }
+
+  const pro = isProfessional(req.user);
+
+  if (!pro) {
+    // Primeiro valida o estágio contra a lista DEMO, impedindo stageId arbitrário.
+    const demoStages = [
+      ...listarEstagiosDemo('F'),
+      ...listarEstagiosDemo('M')
+    ];
+    const allowedStage = demoStages.some(s => s.id === stageId);
+
+    if (!allowedStage) {
+      return res.status(403).json({
+        erro: 'Este estágio não está disponível no modo DEMO. Use um dos 3 estágios de demonstração.'
+      });
+    }
+
+    // DEMO não permite acessar grupos separadamente para contornar o limite.
+    if (grupo !== 'todos') {
+      return res.status(403).json({
+        erro: 'No modo DEMO, o resultado é entregue somente no conjunto demonstrativo. Vitaminas e minerais completos são recursos profissionais.'
+      });
+    }
+
+    if (!consumeDemoCalculation(req)) {
+      const usage = getDemoUsage(req);
+      return res.status(429).json({
+        erro: 'Limite DEMO atingido: 5 cálculos por período de 24 horas.',
+        calculosMaximos: DEMO_MAX_CALCULOS,
+        calculosUsados: usage.count
+      });
+    }
+  }
+
+  const metasCompletas = calcularMetas(stageId, grupo);
+  if (!metasCompletas.length) {
+    return res.status(404).json({ erro: 'Estágio não encontrado ou sem dados.' });
+  }
+
+  const metas = pro ? metasCompletas : limitarMetasDemo(metasCompletas);
+
+  const usage = pro ? null : getDemoUsage(req);
+
+  console.log(
+    `[CALC] modo=${pro ? 'pro' : 'demo'} user=${req.user.email} stage=${stageId} grupo=${grupo} at=${new Date().toISOString()}`
+  );
+
+  res.json({
+    geradoEm: new Date().toISOString(),
+    modo: pro ? 'profissional' : 'demo',
+    profissional: {
+      nome: req.user.nome,
+      email: req.user.email,
+      crn: req.user.crn,
+      plano: req.user.plano
+    },
+    pacienteNome: String(pacienteNome || '').slice(0, 120) || null,
+    stageId,
+    grupo,
+    metas,
+    limiteDemo: pro ? null : {
+      calculosUsados: usage.count,
+      calculosRestantes: Math.max(0, DEMO_MAX_CALCULOS - usage.count),
+      nutrientesEntregues: metas.length,
+      nutrientesMaximos: DEMO_MAX_NUTRIENTES
+    },
+    licenca: pro
+      ? `Uso profissional — ${req.user.nome}${req.user.crn ? ' · ' + req.user.crn : ''}`
+      : `DEMONSTRAÇÃO — ${req.user.nome} · resultado limitado`
+  });
+});
+
+app.get('*', (_req, res) => {
+  if (publicDir) return res.sendFile(path.join(publicDir, 'index.html'));
+  res.status(404).type('html').send(
+    '<!doctype html><html><body><h1>Padovani DRI API V2</h1><p>index.html não encontrado.</p><p><a href="/api/health">/api/health</a></p></body></html>'
+  );
+});
+
+app.listen(PORT, () => {
+  console.log(`Padovani DRI API V2 rodando em http://localhost:${PORT}`);
+  console.log('DEMO: teste@demo.com / demo123');
+  console.log('PROFISSIONAL: nutri@demo.com / demo123');
+  if (!process.env.JWT_SECRET) {
+    console.warn('ATENÇÃO: defina JWT_SECRET no Render para produção.');
+  }
+});
+'''
+
+package_json = r'''{
+  "name": "padovani-dri-api",
+  "version": "2.0.0",
+  "description": "API protegida - Calculadora DRI Padovani com modo DEMO e PROFISSIONAL",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node index.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "express": "^4.21.0",
+    "jsonwebtoken": "^9.0.0"
+  }
+}'''
+
+(out / "index.html").write_text(index_html, encoding="utf-8")
+(out / "server" / "index.js").write_text(server_js, encoding="utf-8")
+(out / "server" / "package.json").write_text(package_json, encoding="utf-8")
+
+zip_path = Path("/mnt/data/padovani-dri-v2-demo-profissional.zip")
+with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as z:
+    z.write(out / "index.html", "index.html")
+    z.write(out / "server" / "index.js", "server/index.js")
+    z.write(out / "server" / "package.json", "server/package.json")
+
+print("Arquivos V2 criados:")
+print(out / "index.html")
+print(out / "server" / "index.js")
+print(out / "server" / "package.json")
+print("\nZIP:")
+print(zip_path)
+
