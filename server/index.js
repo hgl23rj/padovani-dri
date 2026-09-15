@@ -35,10 +35,10 @@ const users = [
 
   {
     id: 1,
-    email: 'nutri@demo.com',
+    email: 'ayuveda@demo.com',
     nome: 'Nutricionista Demo',
     crn: 'CRN-4 00000',
-    passwordHash: bcrypt.hashSync('demo123', 10),
+    passwordHash: bcrypt.hashSync('nutri78', 10),
     plano: 'pro',
     ativo: true
   },
